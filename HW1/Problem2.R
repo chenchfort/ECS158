@@ -34,9 +34,8 @@ plotmae <- function(a, kvec)
   # image. Thus, the lower the rank the higher the mae.
   for (k in kvec)
     maevec <- append(maevec, mae(a,getapprox(a, k)))
-  print(kvec)
 
   # Now that I have kvec and maevec, I can plot.
-  plot(kvec, maevec, type='l', col='r', main='MAE vs. Rank',
+  plot(kvec, maevec, type='l', main='MAE vs. Rank',
        xlab='MAE', ylab='Rank')
 }
