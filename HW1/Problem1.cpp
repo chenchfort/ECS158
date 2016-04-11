@@ -1,34 +1,10 @@
-
-#include <sys/time.h>
-#include <inttypes.h>
 #include <cstring>
 #include <omp.h>
 #include <iostream>
-#include <time.h>
 #include <stdlib.h>
-
-
 using namespace std;
 
-#define m(i,j,n) i*n + j
-
-
-void matMul(float *a, float *b, float *c, int m, int n, int p);
-
-void mWiki(const float*A , const float* B, float* C, const int N, const int M, const int K) {
-
-    int i,j,l;
-    #pragma omp parallel for shared(A,B,C) private(i,j,l)
-    for(i=0; i<N; i++) {
-        for(l=0; l<M; l++) {
-            float a  = A[M*i+l];
-            for(j=0; j<K; j++) {
-                C[K*i + j] += a*B[K*l+j];
-            }
-        }
-    }
-}
-void transpose(float *a, int m, int n)
+inline void transpose(float *a, int m, int n)
 {
 	float *at = new float[m*n];
 	int i, j;
@@ -77,6 +53,24 @@ inline void matVec(const float* a, float* cVec, const float* bVec, int m, int n)
     for(i=temp2; i<m; i++) //continue the work
         for(j=0; j<n; j++)
             cVec[i] += a[i*n+j]*bVec[j];
+}
+
+inline void matMul(float *a, float *b, float *c, int m, int n, int p)
+{
+	int i,j,k;
+	float *bt = new float[n*p]; //bt transpose
+	memset(c, 0.0, sizeof(float)*m*p);
+	
+	#pragma omp parallel for shared(b,bt) private(i,j)	
+	for (j=0; j<p; j++) //col
+		for (i=0; i<n; i++) //row
+			bt[j*n+i] = b[i*p+j];
+	
+	#pragma omp parallel for shared(a,b,c)
+	for (i=0; i<m; i++)
+		matVec(bt, c+i*p, a+i*n, p, n); //p*n matrix bt
+	
+	delete[] bt;
 }
 
 void nmfomp(float *a, int r, int c, int k, int niters, float *w, float *h)
@@ -134,62 +128,6 @@ void nmfomp(float *a, int r, int c, int k, int niters, float *w, float *h)
 	delete[] wt;
 }
 
-int main()
-{
-	float *a, *w, *h;
- 	int r = 500;
- 	int k = 100;
- 	
- 	int c = 500;
- 	
-	a = new float[r*c];
-	w = new float[r*k];
-	h = new float[k*c];
-	int count=1;
-	for (int i=0; i<r*c; i++)
-	{
-   	 	a[i] = count++;
-	}
-	for (int i=0; i<r*k; i++)
-	{
-		w[i] = 1;
-	}
-	
-	for (int i=0; i<k*c; i++)
-	{
-		h[i] = 1;
-	}
-	
- 	double wtime = omp_get_wtime();
- 
-	
-	nmfomp(a,r,c,k,10,w,h);
 
-		
-	wtime = omp_get_wtime() - wtime;
-	
-	cout << wtime << endl;
-
-	delete[] a;
-	delete[] w;
-	delete[] h;
-}
-
-void matMul(float *a, float *b, float *c, int m, int n, int p)
-{
-	int i,j,k;
-	float *bt = new float[n*p]; //bt transpose
-	
-	#pragma omp parallel for shared(b,bt) private(i,j)	
-	for (j=0; j<p; j++) //col
-		for (i=0; i<n; i++) //row
-			bt[j*n+i] = b[i*p+j];
-	
-	#pragma omp parallel for shared(a,b,c)
-	for (i=0; i<m; i++)
-		matVec(bt, c+i*p, a+i*n, p, n); //p*n matrix bt
-	
-	delete[] bt;
-}
 
 
