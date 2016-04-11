@@ -3,7 +3,6 @@
 # Problem 2
 
 library(NMF)     # Required for nmf()
-library(Metrics) # Required for mae()
 
 # getapprox(a, k)
 # Input : a - matrix from the pixlemap
@@ -35,7 +34,7 @@ plotmae <- function(a, kvec)
   # image. Thus, the lower the rank the higher the mae.
   for (k in kvec)
   {
-    maevec <- append(maevec, mae(a,getapprox(a, k)))
+    maevec <- append(maevec, mae_my(a,getapprox(a, k)))
     # Backup mae
     #maevec_my <- append(maevec_my, mae_my(a, getapprox(a, k)))
   }
