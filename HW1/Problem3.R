@@ -8,7 +8,7 @@ plottimes <- function(cls,a,k,clssizevec)
   
   for (n in clssizevec)
   {
-    timevec <- append(timevec, system.time(nmfsnow(n, a, k)))
+    timevec <- append(timevec, system.time(nmfsnow(n, a, k))[[3]])
   }
   
   plot(clssizevec, timevec, type='l', main='Node vs. Time',
@@ -17,7 +17,7 @@ plottimes <- function(cls,a,k,clssizevec)
 
 nmfsnow <- function(cls,a,k)
 {
-  rowgrps <- splitIndices(nrow(a), length(c2))
+  rowgrps <- splitIndices(nrow(a), length(cls))
   chunks <- Map(function(grp) a[grp,], rowgrps)
   rowapprox <-function(m,k)
   {
@@ -28,7 +28,7 @@ nmfsnow <- function(cls,a,k)
     approx <- w %*% h
     return(approx)
   }
-  mout <- clusterApply(c2, chunks, rowapprox, k)
+  mout <- clusterApply(cls, chunks, rowapprox, k)
   c <- mout[[1]]
   for (i in 2:length(mout))
     c <- rbind(c, mout[[i]])
