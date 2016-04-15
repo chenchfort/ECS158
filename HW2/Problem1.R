@@ -13,8 +13,8 @@ parquad <- function(u, a, val)
   u_t <- t(u) # transpose u
 
   index <- splitIndices(nrow(u), myinfo$nwrkrs)[[myinfo$id]]
-  val[index,] <- u_t[index,] %*% A[,]
+  val[,index] <- u_t[,index] %*% A[index,]
+  val[,] <- val[,index] %*% u[index,]
 
-  val[index,] <- A[,] %*% u[index,]
   return(0)
 }
