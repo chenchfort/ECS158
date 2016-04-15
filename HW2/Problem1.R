@@ -3,18 +3,19 @@
 # Uses Rdsm
 
 # parquad(u, a val)
-# Input : u - vectors
+# Input : u - VECTOR BUILT FOR MATRIX
 #         a - Matrix
 #         val - return variable
 parquad <- function(u, a, val)
 {
   require(parallel)
+  ut <- t(u) # transpose u
 
-  u_t <- t(u) # transpose u
+  # Replace with splitIndices(nrow(u), myinfo$nwrkrs)[[myinfo$id]]
+  index <- splitIndices(nrow(u), 2)[[2]]
 
-  index <- splitIndices(nrow(u), myinfo$nwrkrs)[[myinfo$id]]
-  val[,index] <- u_t[,index] %*% A[index,]
-  val[,] <- val[,index] %*% u[index,]
+  val[index,] <- ut[,index] %*% a[index,]
+  val <- val[index,] %*% u[,]
 
-  return(0)
+  0
 }
