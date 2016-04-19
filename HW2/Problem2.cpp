@@ -14,6 +14,3 @@ int brights(float *pix, int n, int k, float thresh)
 
 	return count;
 }
-
-  return 0;
-}
