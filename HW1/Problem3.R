@@ -1,14 +1,15 @@
 library(NMF)
-library(snow)
 library(parallel)
 
 plottimes <- function(cls,a,k,clssizevec)
 {
+  library(parallel)
+  library(NMF)
   timevec <- vector()
   
   for (n in clssizevec)
   {
-    timevec <- append(timevec, system.time(nmfsnow(n, a, k))[[3]])
+    timevec <- append(timevec, system.time(nmfsnow(cls, a, k))[[3]])
   }
   
   plot(clssizevec, timevec, type='l', main='Node vs. Time',
