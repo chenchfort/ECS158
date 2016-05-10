@@ -1,82 +1,71 @@
 #include <iostream>
-#include <omp.h>
+#include <vector>
 
 using namespace std;
 
-void findpaths_helper(int *adjm, int row, int k, int n, int *paths, int *numpaths, int *depth, const int start);
+void findpaths_helper(int *adjm, int row, int k, int n, int *paths,
+                      int *numpaths, int &depth, bool &found,
+                      vector<int> &visited);
 
-void findpaths(int *adjm, int n, int k, int *paths, int *numpaths)
-{
-  int depth;
-
-  for (int i = 0; i < n; i++)
-  {
-    for (int j = 0; j < n; j++)
-    {
-      if (adjm[i * n + j] == 1)
-      {
-        // Recurse
-        // pass j as row to search
-        depth = 1;
-        paths[i * n + (paths * numpaths[i] + depth)] = i;
-        findpaths_helper(adjm, j, k, n, paths, numpaths, depth, j);
-      }
+void findpaths(int *adjm, int n, int k, int *paths, int *numpaths) {
+    *numpaths = 0;
+    for (int row = 0; row < n; row++) {
+        for (int col = 0; col < n; col++) {
+            if (adjm[row * n + col] == 1) {
+                int depth = 0;
+                bool found = false;
+                vector<int> visited(k + 1, -2);
+                visited[0] = row;
+                findpaths_helper(adjm, col, k, n, paths, numpaths, depth, found,
+                                 visited);
+                (*numpaths)++;
+            }
+        }
     }
-  }
 }
 
-
-void findpaths_helper(int *adjm, int row, int k, int n, int *paths, int *numpaths, int *depth, const int start)
-{
-  // Base case, k nodes found
-  if (depth == k)
-    return;
-
-  else
-  {
-    for (int i = 0; i < n; i++)
-    {
-      if (adjm[row * n + i] == 1)
-      {
-        depth++;
-        paths[start * n + (paths * numpaths[start] + depth)] = row;
-        findpaths_helper(adjm, i, k, paths, numpaths, depth);
-        break;
-      }
-      else
-      {
-        // reset path stored in numpaths
-        for (int i = 0; i < depth; i++)
-          paths[start * n + (paths * numpaths[start] + depth)] = 0;
-        depth = 0;
-        break;
-      }
+void findpaths_helper(int *adjm, int row, int k, int n, int *paths,
+                      int *numpaths, int &depth, bool &found,
+                      vector<int> &visited) {
+    for (int col = 0; col < n; col++) {
+        if (adjm[row * n + col] == 1) {
+            depth++;
+            visited[depth] = row;
+            if (depth - 1 == k) {
+                for (int *ptr = paths + (*numpaths) * (k + 1), i = 0; i < depth; i++, ptr++) {
+                    *ptr = visited[i];
+                }
+                found = true;
+                return;
+            }
+            findpaths_helper(adjm, col, k, n, paths, numpaths, depth, found, visited);
+            depth--;
+        }
     }
-  }
 }
 
+int main(void) {
+    int n = 3; // Number of vertices
+    int k = 2;
+    int *adjm = new int[n * n];
 
-int main(void)
-{
-  // Test matrix, 1 -> 2 -> 3.
-  // k = 2
-  // result should be 3.
+    for (int i = 0; i < n * n; i++)
+        adjm[i] = 0;
 
-  int n = 3; // Number of vertices
-  int k = 2;
-  int *adjm = new int[n * n];
+    adjm[1] = 1;
+    adjm[5] = 1;
+    adjm[6] = 1;
+    int size = 10;
+    int numpaths, paths[size];
 
-  for (int i = 0; i < n * n; i++)
-    adjm[i] = 0;
+    for (int i = 0; i < size; i++)
+        paths[i] = -1;
 
-  adjm[1] = 1;
-  adjm[5] = 1;
-  adjm[6] = 1;
+    findpaths(adjm, n, k, paths, &numpaths);
 
-  int *numpaths = new int[100];
-  int *paths = new int[100];
+    for (int i = 0; i < numpaths; i++, cout << endl)
+        for (int j = 0; j < k + 1; j++)
+            cout << paths[i * (k + 1) + j] << " ";
 
-  findpaths(adjm, n, k, paths, numpaths);
-
-  return 0;
+    return 0;
 }
