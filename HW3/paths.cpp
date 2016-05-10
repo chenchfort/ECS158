@@ -4,8 +4,7 @@
 using namespace std;
 
 void findpaths_helper(int *adjm, int row, int k, int n, int *paths,
-                      int *numpaths, int &depth, bool &found,
-                      vector<int> &visited);
+                      int *numpaths, int &depth, bool &found, int *visited);
 
 void findpaths(int *adjm, int n, int k, int *paths, int *numpaths) {
     *numpaths = 0;
@@ -14,7 +13,7 @@ void findpaths(int *adjm, int n, int k, int *paths, int *numpaths) {
             if (adjm[row * n + col] == 1) {
                 int depth = 0;
                 bool found = false;
-                vector<int> visited(k + 1, -2);
+                int visited[k + 1];
                 visited[0] = row;
                 findpaths_helper(adjm, col, k, n, paths, numpaths, depth, found,
                                  visited);
@@ -26,7 +25,7 @@ void findpaths(int *adjm, int n, int k, int *paths, int *numpaths) {
 
 void findpaths_helper(int *adjm, int row, int k, int n, int *paths,
                       int *numpaths, int &depth, bool &found,
-                      vector<int> &visited) {
+                      int *visited) {
     for (int col = 0; col < n; col++) {
         if (adjm[row * n + col] == 1) {
             depth++;
