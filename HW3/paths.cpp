@@ -3,24 +3,57 @@
 
 using namespace std;
 
+void findpaths_helper(int *adjm, int row, int k, int n, int *paths, int *numpaths, int *depth, const int start);
 
 void findpaths(int *adjm, int n, int k, int *paths, int *numpaths)
 {
+  int depth;
+
   for (int i = 0; i < n; i++)
-  { // Scan through rows
+  {
     for (int j = 0; j < n; j++)
-    { // Scan through col
+    {
       if (adjm[i * n + j] == 1)
+      {
+        // Recurse
+        // pass j as row to search
+        depth = 1;
+        paths[i * n + (paths * numpaths[i] + depth)] = i;
+        findpaths_helper(adjm, j, k, n, paths, numpaths, depth, j);
+      }
     }
   }
-    
-
-  return;
 }
 
 
+void findpaths_helper(int *adjm, int row, int k, int n, int *paths, int *numpaths, int *depth, const int start)
+{
+  // Base case, k nodes found
+  if (depth == k)
+    return;
 
-
+  else
+  {
+    for (int i = 0; i < n; i++)
+    {
+      if (adjm[row * n + i] == 1)
+      {
+        depth++;
+        paths[start * n + (paths * numpaths[start] + depth)] = row;
+        findpaths_helper(adjm, i, k, paths, numpaths, depth);
+        break;
+      }
+      else
+      {
+        // reset path stored in numpaths
+        for (int i = 0; i < depth; i++)
+          paths[start * n + (paths * numpaths[start] + depth)] = 0;
+        depth = 0;
+        break;
+      }
+    }
+  }
+}
 
 
 int main(void)
@@ -40,8 +73,10 @@ int main(void)
   adjm[5] = 1;
   adjm[6] = 1;
 
+  int *numpaths = new int[100];
+  int *paths = new int[100];
+
   findpaths(adjm, n, k, paths, numpaths);
 
   return 0;
 }
-
