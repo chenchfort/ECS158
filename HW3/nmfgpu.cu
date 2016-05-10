@@ -98,12 +98,6 @@ void nmfgpu(float *a, int r, int c, int k, int niters, float *w, float *h)
 	cudaFree(dev_w);
 	cudaFree(dev_h);
 	cudaFree(dev_a);
-	for (int i=0; i< r; i++) {
-		for (int j=0; j< k; j++) {
-			cout << w[i*k+j] << " ";
-		}
-		cout << endl;
-	}
 }
 
 /*int main()
