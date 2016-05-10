@@ -12,8 +12,6 @@ __global__ void nmf(float *a, int r, int c, int k, int niters, float *w,
 
   for (i = 0; i < niters; i++)
   {
-    // Calculate w
-    temp_AH = 
   }
 }
 
