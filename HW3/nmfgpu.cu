@@ -12,11 +12,13 @@ __global__ void nmf(float *a, int r, int c, int k, int niters, float *w,
   int i, j, k1, k2, k3;
   float tmp1, tmp2, sum;
   int itr;
+  int total_th = gridDim.x * blockDim.x;
+  int t_id     = blockIdx.x * blockDim.x + threadIdx.x;
 
   for (itr = 0; itr < niters; itr++)
   {
     // Compute new W
-    for (i = 0; i < n; i++)
+    for (i = t_id; i < n; i += total_th)
       for (j = 0; j < k; j++)
       {
         tmp1 = 0;
@@ -38,9 +40,10 @@ __global__ void nmf(float *a, int r, int c, int k, int niters, float *w,
         // Iterate W
         w[i * r + j] = w[i * r + j] * (tmp1 / tmp2);
       }
+    __synchthreads();
 
     // Compute new H
-    for (i = 0; i < k; i++)
+    for (i = t_id; i < k; i += total_th)
       for (j = 0; j < c; j++)
       {
         tmp1 = 0;
@@ -63,6 +66,7 @@ __global__ void nmf(float *a, int r, int c, int k, int niters, float *w,
         // Iterate H
         h[i * k + j] = h[i * k + j] * (tmp1 / tmp2);
       }
+    __synchthreads();
   }
 }
 
@@ -96,8 +100,8 @@ void nmfgpu(float *a, int r, int c, int k, int niters, float *w, float *h)
 
   // Set up threads structure of GPU
   // Play around with this later
-  dim3 dimGrid(1, 1);
-  dim3 dimBlock(1, 1, 1);
+  dim3 dimGrid(r, c);
+  dim3 dimBlock(32, 1, 1);
 
   // invoke kernel
   nmf<<<dimGrid, dimBlock>>>(dev_a, r, c, k, niters, dev_w, dev_h);

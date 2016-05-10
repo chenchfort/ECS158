@@ -101,6 +101,7 @@ __global__ void nmf(float *a, int r, int c, int k, int niters, float *w,
         // Iterate W
         w[i * r + j] = w[i * r + j] * (tmp1 / tmp2);
       }
+    __synchthreads();
 
     // Compute new H
     for (i = 0; i < k; i++)
@@ -126,6 +127,8 @@ __global__ void nmf(float *a, int r, int c, int k, int niters, float *w,
         // Iterate H
         h[i * k + j] = h[i * k + j] * (tmp1 / tmp2);
       }
+    __synchthreads();
+
   }
 }
 
