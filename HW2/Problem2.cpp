@@ -12,7 +12,7 @@ inline bool is_brights(const float *pix, const int i, const int j, const int n,c
 }
 
 
-int brights(float *pix, int n, int k, float thresh) 
+int brights(float *pix, int n, int k, float thresh)
 {
   int count = 0;
   const int s = n - k + 1;
@@ -24,4 +24,38 @@ int brights(float *pix, int n, int k, float thresh)
           count+=1;
 
   return count;
+}
+
+int main(void)
+{
+  float *pix = new float[N * N];
+  float thresh = 0.5;
+  int bright_ctr, pix_ctr = 0;
+  chrono::time_point<chrono::system_clock> start, end;
+  chrono::duration<double> time_elapsed;
+
+  for (int i = 0; i < (N * N); i++)
+  {
+    pix[i] = distribution(engine);
+
+    if (pix[i] > thresh)
+      pix_ctr++;
+  }
+
+  start = chrono::system_clock::now();
+
+  bright_ctr = brights(pix, N, K, thresh);
+
+  end = chrono::system_clock::now();
+
+  time_elapsed = end - start;
+
+  cout << "Bright pixles  : " << pix_ctr << endl;
+  cout << "From brights() : " << bright_ctr << endl;
+  cout << "Time taken     : " << time_elapsed.count() << "s" << endl;
+  cout << endl;
+
+  delete [] pix;
+
+  return 0;
 }

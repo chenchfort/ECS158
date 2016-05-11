@@ -1,115 +1,113 @@
 #include <iostream>
-#include <vector>
+#include <omp.h>
 
-// Detected 4 valid paths
-// There should only be 2
+#define VERBOSE
 
 using namespace std;
 
-void findpaths_helper(int *adjm, int row, int k, int n, int *paths,
-                      int *numpaths, int &depth, bool &found, int *visited);
-
-void findpaths(int *adjm, int n, int k, int *paths, int *numpaths) 
+void check_path(int *adjm, int n, int k, int *paths, int *numpaths, int row, int &depth, int *visited)
 {
-  *numpaths = 0;
-  for (int row = 0; row < n; row++)
+  // Base case
+  if (depth  == k)
   {
-    for (int col = 0; col < n; col++)
+    #ifdef VERBOSE
+    cout << "    Writing to paths : ";
+    #endif
+
+    for (int *ptr = paths + (*numpaths) * (k + 1), i = 0; i <= depth; i++, ptr++)
     {
-      // Link to anther path found
-      if (adjm[row * n + col] == 1)
-      {
-        int depth = 0;
-        bool found = false;
-        int visited[k + 1];
-        visited[0] = row; // Add starting vertex
-
-        findpaths_helper(adjm, col, k, n, paths, numpaths, depth, found,
-            visited);
-        (*numpaths)++;
-      }
+      *ptr = visited[i];
+      #ifdef VERBOSE
+      cout << visited[i] << " ";
+      #endif
     }
+    #ifdef VERBOSE
+    cout << endl;
+    #endif
+    (*numpaths)++;
+    return;
   }
-  return;
-}
 
-void findpaths_helper(int *adjm, int row, int k, int n, int *paths,
-                      int *numpaths, int &depth, bool &found, int *visited)
-{
   for (int col = 0; col < n; col++)
   {
+    if (adjm[row * n + col] != 1 && col == (n - 1))
+      return;
+
     if (adjm[row * n + col] == 1)
     {
+      #ifdef VERBOSE
+      cout << "  Connection found in vertex " << row << " to vertex " << col << endl;
+      #endif
       depth++;
       visited[depth] = row;
-      if (depth - 1 == k)
-      {
-        for (int *ptr = paths + (*numpaths) * (k + 1), i = 0; 
-             i < depth; i++, ptr++)
-          *ptr = visited[i];
 
-        found = true;
-        return;
-      }
-      findpaths_helper(adjm, col, k, n, paths, numpaths, depth, found, visited);
+      check_path(adjm, n, k, paths, numpaths, col, depth, visited);
       depth--;
+      // Avoid duplicates
+      if (depth == k - 1)
+        break;
     }
   }
-  return;
 }
 
-int main(void) {
-  int n = 4; // Number of vertices
+void findpaths(int *adjm, int n, int k, int *paths, int *numpaths)
+{
+  *numpaths = 0;
+  // Iterate to check through all the rows and col
+  for (int i = 0; i < n; i++) {
+    for (int j = 0; j < n; j++) {
+      if (adjm[i * n + j] == 1) // Jump to row j
+      {
+        int depth = 0;
+        int visited[k + 1];
+        visited[depth] = i;
+        #ifdef VERBOSE
+        cout << "Searching vertex " << i << " connected to vertex " << j << endl;
+        #endif
+        check_path(adjm, n, k, paths, numpaths, j, depth, visited);
+      }
+    }
+  }
+}
+
+int main(void)
+{
+  int n = 3;
   int k = 2;
+
   int *adjm = new int[n * n];
-  
+
   for (int i = 0; i < n * n; i++)
     adjm[i] = 0;
 
-  /* C -> D  [ 0 1 1 0 ]
-   * ^    ^  [ 0 0 0 1 ]
-   * |    |  [ 0 0 0 1 ]
-   * A -> B  [ 0 0 0 0 ]
-   */
   adjm[1] = 1;
-  adjm[2] = 1;
-  adjm[7] = 1;
-  adjm[11] = 1;
+  adjm[3] = 1;
+  adjm[5] = 1;
+  adjm[6] = 1;
 
-  /* A -> B -> C -| [ 0 1 0 ]
-   * ^------------| [ 0 0 1 ]
-   *                [ 1 0 0 ]
-   * adjm[1] = 1;
-   * adjm[5] = 1;
-   * adjm[6] = 1;
-   */
+  int size = 300;
+  int numpaths, paths[size];
 
-  for (int i = 0; i < n; i++)
-  {
-    for (int j = 0; j < n; j++)
-    {
+  for (int i = 0; i < size; i++)
+    paths[i] = -1;
+
+  for (int i = 0; i < n; i++) {
+    for (int j = 0; j < n; j++) {
       cout << adjm[i * n + j] << " ";
     }
     cout << endl;
   }
-  cout << endl;
 
-  
-  int size = 10;
-  int numpaths, paths[size];
-  
-  for (int i = 0; i < size; i++)
-    paths[i] = -1;
-  
   findpaths(adjm, n, k, paths, &numpaths);
-  
+  cout << numpaths << endl;
+
   for (int i = 0; i < numpaths; i++)
   {
-    for (int j = 0; j < k + 1; j++)
-    {
-      cout << paths[i * (k + 1) + j] << " ";
-    }
-    cout << endl;
+      for (int j = 0; j < k + 1; j++)
+      {
+        cout << paths[i * (k + 1) + j] << " ";
+      }
+      cout << endl;
   }
 
   return 0;
