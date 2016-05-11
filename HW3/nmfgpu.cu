@@ -82,7 +82,7 @@ __global__ void nmfcpy(float *mat, float *matcp, int m, int n) //kernel copy mus
 void nmfgpu(float *a, int r, int c, int k, int niters, float *w, float *h)
 {
 	const dim3 block(BLOCKSIZE, BLOCKSIZE);
-	const dim3 grid((r + BLOCKSIZE - 1)/ BLOCKSIZE,(c + BLOCKSIZE - 1)/ BLOCKSIZE);
+	const dim3 grid((r + BLOCKSIZE - 1)/ BLOCKSIZE + BLOCKSIZE,(c + BLOCKSIZE - 1)/ BLOCKSIZE + BLOCKSIZE);
 	//initialize
 	float *dev_w, *dev_h, *dev_a, *dev_wcp, *dev_hcp; 
 	cudaMalloc((void**)&dev_w, sizeof(float)*r*k);
