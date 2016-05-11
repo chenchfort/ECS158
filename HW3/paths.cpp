@@ -10,14 +10,13 @@ void check_path(int *adjm, int n, int k, int *paths, int *numpaths, int row, int
 	if (depth == k)
 	{
 		#pragma omp critical
-		{
 			for (int *ptr = paths + (*numpaths) * (k + 1), i = 0; i <= depth; i++, ptr++)
 			{
+				
 				*ptr = visited[i];
 			}
-
+		#pragma omp atomic
 			(*numpaths)++;
-		}
 		return;
 	}
 
