@@ -1,120 +1,149 @@
-#include <stdio.h>
-#include <stdlib.h>
+#include <iostream>
 #include <cuda.h>
+#include <math.h>
 
+using namespace std;
 
-/* Change later to make faster and utilize blocks/threads on gpu.
- */
+#define BLOCKSIZE 16
 
-__global__ void nmf(float *a, int r, int c, int k, int niters, float *w,
-                    float *h)
+/*void mat(const float*A , const float* B, float* C, const int N, const int M, const int K) {
+      int i,j,l;
+          #pragma omp parallel for shared(A,B,C) private(i,j,l)
+              for(i=0; i<N; i++) {
+                      for(l=0; l<M; l++) {
+                                  float a  = A[M*i+l];
+                                              for(j=0; j<K; j++) {
+                                                              C[K*i + j] += a*B[K*l+j];
+                                                                          }
+                                                                                  }
+                                                                                      }
+                                                                                      }*/
+
+__global__ void nmf(float *a, int r, int c, int k, int niters, float *w, float *h)
 {
-  int i, j, k1, k2, k3;
-  float tmp1, tmp2, sum;
-  int itr;
-  int total_th = gridDim.x * blockDim.x;
-  int t_id     = blockIdx.x * blockDim.x + threadIdx.x;
+    int row = blockIdx.y*blockDim.y + threadIdx.y;
+      int col = blockIdx.x*blockDim.x + threadIdx.x;
+        float temp = 0.0;
+          float sum = 0.0;
+            
+            for (int iter = 0; iter < niters; iter++) {
+                //compute W
+                  if (col < k && row < r) {
+                          //ah'
+                          sum = 0.0;
+                                for (int i = 0; i < c; i++)
+                                          sum += a[row*c + i]*h[col*c + i];
+                                      temp =  w[row*k+col]*sum;
+                                            //whh'
+                                            sum = 0.0;
+                                                  for (int i = 0; i < c; i++) {
+                                                            float sum2 = 0.0;
+                                                                    for (int j = 0; j < k; j++) 
+                                                                                sum2 += w[row*k + j]*h[j*c + i];
+                                                                            sum += sum2*h[col*c+i];
+                                                                                  }
+                                                        __syncthreads();    
+                                                              w[row*k+col] = temp/sum;
+                                                                  }
+                      __syncthreads();
 
-  for (itr = 0; itr < niters; itr++)
-  {
-    // Compute new W
-    for (i = t_id; i < n; i += total_th)
-      for (j = 0; j < k; j++)
-      {
-        tmp1 = 0;
-        tmp2 = 0;
-        sum  = 0;
-
-        // Calculate AH'
-        for (k1 = 0; k1 < k; k++)
-          tmp1 += a[i * r + k1] * h[k1 * c + i];
-
-        // Calculate WHH'
-        for (k2 = 0; k2 < k; k2++)
-        {
-          for (k3 = 0; k3 < m; k3++)
-            sum += h[k2 * k + k3] * h[k3 * c + j];
-
-          tmp2 += w[i * n + k2] * sum;
-        }
-        // Iterate W
-        w[i * r + j] = w[i * r + j] * (tmp1 / tmp2);
-      }
-    __synchthreads();
-
-    // Compute new H
-    for (i = t_id; i < k; i += total_th)
-      for (j = 0; j < c; j++)
-      {
-        tmp1 = 0;
-        tmp2 = 0;
-        sum  = 0;
-
-        // Calculate W'A
-        for (k1 = 0; k1 < r; k1++)
-          tmp += w[i * k  + k1] * A[k1 * r + j];
-
-        // Calculate W'WH
-        for (k2 = 0; k2 < r; k2++)
-        {
-          for (k3 = 0; k3 < k; k3++)
-            sum += w[k2 * n + k3] * h[k3 * k + j];
-
-          tmp2 += w[i * k + k2] * sum;
-        }
-
-        // Iterate H
-        h[i * k + j] = h[i * k + j] * (tmp1 / tmp2);
-      }
-    __synchthreads();
-  }
+                          //compute H
+                          if (row < k && col < c) {
+                                  //w'a
+                                  temp = 0.0;
+                                        sum = 0.0;
+                                              for (int i = 0; i < r; i++)
+                                                        sum += w[i*k + row]*a[i*c + col];
+                                                    temp = h[row*c + col]*sum;
+                                                          //w'wh
+                                                          sum = 0;
+                                                                for (int i = 0; i < k; i++) {
+                                                                          float sum2 = 0.0;
+                                                                                  for (int j = 0; j < r; j++) 
+                                                                                              sum2 += w[j*k + row]*w[j*k + i];
+                                                                                          sum += sum2*h[i*c+col];
+                                                                                                }
+                                                                      __syncthreads();    
+                                                                            h[row*c+col] = temp/sum;
+                                                                                }
+                              __syncthreads();
+                                }
 }
+
 
 void nmfgpu(float *a, int r, int c, int k, int niters, float *w, float *h)
 {
-  int *dev_a, *dev_w, *dev_h;
-  int i;
-  int a_size = r * c;
-  int w_size = k * r;
-  int h_size = k * c;
+    const dim3 block(BLOCKSIZE, BLOCKSIZE);
+      const dim3 grid((r + BLOCKSIZE-1) / BLOCKSIZE, (c + BLOCKSIZE-1) / BLOCKSIZE);
 
-  w = (float*) malloc(w_size * sizeof(float));
-  h = (float*) malloc(h_size * sizeof(float));
+        //initialize
+        float *dev_w, *dev_h, *dev_a; 
+          cudaMalloc((void**)&dev_w, sizeof(float)*r*k);
+            cudaMalloc((void**)&dev_h, sizeof(float)*k*c);
+              cudaMalloc((void**)&dev_a, sizeof(float)*r*c);
+                cudaMemcpy(dev_w, w, sizeof(float)*r*k, cudaMemcpyHostToDevice);
+                  cudaMemcpy(dev_h, h, sizeof(float)*k*c, cudaMemcpyHostToDevice);
+                    cudaMemcpy(dev_a, a, sizeof(float)*r*c, cudaMemcpyHostToDevice);
+                      //
+                      //kernel
 
-  // Initial values for w and h
-  for (i = 0; i < w_size; i++)
-    w[i] = 1;
+                      nmf<<<grid, block>>>(dev_a, r, c, k, niters, dev_w, dev_h);
+                        cudaThreadSynchronize();
+                          //cpy back
 
-  for (i = 0; i < h_size; i++)
-    h[i] = 1;
+                          cudaMemcpy(w, dev_w, sizeof(float)*r*k, cudaMemcpyDeviceToHost);
+                            cudaMemcpy(h, dev_h, sizeof(float)*k*c, cudaMemcpyDeviceToHost);
 
-  // Allocate memory to GPU
-  cudaMalloc((void**) &dev_a, a_size);
-  cudaMalloc((void**) &dev_w, w_size);
-  cudaMalloc((void**) &dev_h, h_size);
-
-  // Copy a to device
-  cudaMemcpy(dev_a, a, a_size, cudaMemcpyHostToDevice);
-  cudaMemcpy(dev_w, w, w_size, cudaMemcpyHostToDevice);
-  cudaMemcpy(dev_h, h, h_size, cudaMemcpyHostToDevice);
-
-  // Set up threads structure of GPU
-  // Play around with this later
-  dim3 dimGrid(r, c);
-  dim3 dimBlock(32, 1, 1);
-
-  // invoke kernel
-  nmf<<<dimGrid, dimBlock>>>(dev_a, r, c, k, niters, dev_w, dev_h);
-
-  // Apply barrier on GPU
-  cudaThreadSynchronize();
-
-  // Copy from gpu back to host
-  cudaMemcpy(w, dev_w, w_size, cudaMemcpyDeviceToHost);
-  cudaMemcpy(h, dev_h, h_size, cudaMemcpyDeviceToHost);
-
-  // Clean up
-  cudaFree(dev_a);
-  cudaFree(dev_w);
-  cudaFree(dev_h);
+                              //clean up
+                              cudaFree(dev_w);
+                                cudaFree(dev_h);
+                                  cudaFree(dev_a);
 }
+
+/*int main()
+  {
+    srand(1000);
+      float *a, *w, *h;
+        int r = 3;
+          int k = 2;
+            int c = 3;
+              a = new float[r*c];
+                w = new float[r*k];
+                  h = new float[k*c];
+                    int count = 1;
+                      for (int i = 0; i < r*c; i++)
+                        {
+                            a[i] = count++;
+                              }
+                                float wh = 0.1;
+                                  for (int i = 0; i < r*k; i++)
+                                    {
+                                        w[i] = wh;
+                                            wh+=0.2;
+                                              }
+                                                wh = 0.1;
+                                                  for (int i = 0; i < k*c; i++)
+                                                    {
+                                                        h[i] = wh;
+                                                            wh+=0.2;
+                                                              }
+                                                                
+                                                                nmfgpu(a, r, c, k, 100, w, h);
+                                                                  
+                                                                  float *res = new float[r*c];
+                                                                    for (int i = 0; i<r*c; i++)
+                                                                        res[i] = 0;
+                                                                          mat(w,h,res,r,k,c);
+                                                                            
+                                                                            float error = 0;
+                                                                              for (int i=0; i<r*c;i++)
+                                                                                  error += abs(res[i]-a[i]);
+                                                                                    cout << error << endl;
+                                                                                      
+                                                                                      for (int i=0; i< r; i++) {
+                                                                                          for (int j=0; j< c; j++) {
+                                                                                                cout << res[i*c+j] << " ";
+                                                                                                    }
+                                                                                                        cout << endl;
+                                                                                                          }
+                                                                                                          }*/
