@@ -6,7 +6,8 @@ using namespace std;
 
 #define BLOCKSIZE 16
 
-void mat(const float*A , const float* B, float* C, const int N, const int M, const int K) {
+//test code
+/*void mat(const float*A , const float* B, float* C, const int N, const int M, const int K) {
     int i,j,l;
     #pragma omp parallel for shared(A,B,C) private(i,j,l)
     for(i=0; i<N; i++) {
@@ -17,7 +18,7 @@ void mat(const float*A , const float* B, float* C, const int N, const int M, con
             }
         }
     }
-}
+}*/
 
 __global__ void nmfw(float *a, int r, int c, int k, float *w, float *h, float *wcp)//must be block synchronized!!!
 {
@@ -116,7 +117,8 @@ void nmfgpu(float *a, int r, int c, int k, int niters, float *w, float *h)
 	cudaFree(dev_a);
 }
 
-int main()
+//test code, u can test it if u want
+/*int main()
 {
 	srand(1000);
 	float *w, *h;
@@ -160,4 +162,4 @@ int main()
 	}
 	
 	
-}
+}*/
