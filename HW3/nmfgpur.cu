@@ -124,7 +124,7 @@ __global__ void nmfcpy(double *mat, double *matcp, int m, int n) //kernel copy m
 void nmfInit(double *a, int r, int c, int k, double *tmp)
 {
 	const dim3 block(BLOCKSIZE, BLOCKSIZE);
-	const dim3 grid((r + BLOCKSIZE - 1)/ BLOCKSIZE + BLOCKSIZE,(c + BLOCKSIZE - 1)/ BLOCKSIZE+BLOCKSIZE); //somehow it needs more
+	const dim3 grid((c + BLOCKSIZE - 1)/ BLOCKSIZE,(r + BLOCKSIZE - 1)/ BLOCKSIZE);
 	const int niters = 100;
 	srand(time(0));
 
