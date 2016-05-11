@@ -15,29 +15,31 @@ void findpaths(int *adjm, int n, int k, int *paths, int *numpaths) {
                 bool found = false;
                 int visited[k + 1];
                 visited[0] = row;
+                //cout << row << " " << col << endl;
                 findpaths_helper(adjm, col, k, n, paths, numpaths, depth, found,
                                  visited);
-                (*numpaths)++;
             }
         }
     }
 }
 
 void findpaths_helper(int *adjm, int row, int k, int n, int *paths,
-                      int *numpaths, int &depth, bool &found,
-                      int *visited) {
+                      int *numpaths, int &depth, bool &found, int *visited) {
     for (int col = 0; col < n; col++) {
         if (adjm[row * n + col] == 1) {
             depth++;
             visited[depth] = row;
             if (depth - 1 == k) {
-                for (int *ptr = paths + (*numpaths) * (k + 1), i = 0; i < depth; i++, ptr++) {
+                for (int *ptr = paths + (*numpaths) * (k + 1), i = 0; i < depth;
+                     i++, ptr++) {
                     *ptr = visited[i];
                 }
+                (*numpaths)++;
                 found = true;
                 return;
             }
-            findpaths_helper(adjm, col, k, n, paths, numpaths, depth, found, visited);
+            findpaths_helper(adjm, col, k, n, paths, numpaths, depth, found,
+                             visited);
             depth--;
         }
     }
@@ -52,9 +54,10 @@ int main(void) {
         adjm[i] = 0;
 
     adjm[1] = 1;
+    adjm[3] = 1;
     adjm[5] = 1;
     adjm[6] = 1;
-    int size = 10;
+    int size = 30;
     int numpaths, paths[size];
 
     for (int i = 0; i < size; i++)
