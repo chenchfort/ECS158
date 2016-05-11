@@ -23,7 +23,7 @@ void mat(const double*A , const double* B, double* C, const int N, const int M, 
     }
 }
 
-#define BLOCKSIZE 16
+#define BLOCKSIZE 32
 
 void nmfInit(double *a, int r, int c, int k, double *res);
 
