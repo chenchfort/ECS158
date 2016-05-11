@@ -98,13 +98,9 @@ void nmfgpu(float *a, int r, int c, int k, int niters, float *w, float *h)
 	//kernel
 	for (int i=0; i<niters; i++) { //slow way
 		nmfw<<<grid, block>>>(dev_a, r, c, k, dev_w, dev_h, dev_wcp);
-		cudaThreadSynchronize();
 		nmfcpy<<<grid, block>>>(dev_w, dev_wcp, r, k);
-		cudaThreadSynchronize();
 		nmfh<<<grid, block>>>(dev_a, r, c, k, dev_w, dev_h, dev_hcp);
-		cudaThreadSynchronize();
 		nmfcpy<<<grid, block>>>(dev_h, dev_hcp, k, c);
-		cudaThreadSynchronize();
 	}
 	
 	//cpy back
