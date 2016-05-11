@@ -4,7 +4,7 @@
 #include <fstream>
 using namespace std;
 
-#define BLOCKSIZE 16
+#define BLOCKSIZE 32
 
 //test code
 /*void mat(const float*A , const float* B, float* C, const int N, const int M, const int K) {
