@@ -47,7 +47,7 @@ void findpaths(int *adjm, int n, int k, int *paths, int *numpaths)
 	{
 		int me = omp_get_thread_num();
 		int nth = omp_get_num_threads();
-		int block = n > block ? n / nth : 1;
+		int block = n > nth ? (n / nth) : 1;
 		for (int i = me*block; i < (me + 1)*block && i < n; i++) {
 			for (int j = 0; j < n; j++) {
 				if (adjm[i * n + j] == 1) // Jump to row j
