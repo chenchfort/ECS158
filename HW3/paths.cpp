@@ -45,8 +45,8 @@ void findpaths(int *adjm, int n, int k, int *paths, int *numpaths)
       block = n > nth ? (n / nth) : 1;
     }
 
-    #pragma omp paralle for shared(paths, numpaths) collapse(2)
 		for (int i = me*block; i < (me + 1)*block && i < n; i++) {
+    #pragma omp parallel for shared(paths, numpaths)
 			for (int j = 0; j < n; j++) {
 				if (adjm[i * n + j] == 1) {
 					int depth = 0;
