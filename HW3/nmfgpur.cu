@@ -7,7 +7,7 @@
 using namespace std;
 // treat it as C code
 extern "C" {
-    SEXP gpu(SEXP ra, SEXP rk);
+    SEXP gpu(SEXP ra, SEXP rk, SEXP rniters);
 }
 
 void mat(const double*A , const double* B, double* C, const int N, const int M, const int K) {
@@ -25,16 +25,17 @@ void mat(const double*A , const double* B, double* C, const int N, const int M, 
 
 #define BLOCKSIZE 32
 
-void nmfInit(double *a, int r, int c, int k, double *res);
+void nmfInit(double *a, int r, int c, int k, double *res, int niters);
 
-SEXP gpu(SEXP ra, SEXP rk) {
+SEXP gpu(SEXP ra, SEXP rk, SEXP rniters) {
 	
     int k = INTEGER(rk)[0]; //k
     SEXP adim = 
        getAttrib(ra, R_DimSymbol);
     int m = INTEGER(adim)[0]; //how many rows
 	int n = INTEGER(adim)[1];
-	
+    int niters = INTEGER(rniters)[0];
+
     double *a = REAL(ra);
 	SEXP rres = PROTECT(allocMatrix(REALSXP, m, n));
 	double *res = REAL(rres);
@@ -52,7 +53,7 @@ SEXP gpu(SEXP ra, SEXP rk) {
 		for (int j=0; j<n; j++)
 			tmp[i*n+j] = a[j*m+i];
 	
-	nmfInit(tmp, m, n, k, tmp2);
+	nmfInit(tmp, m, n, k, tmp2, niters);
 
 	for (int i=0; i<m; i++)
 		for (int j=0; j<n; j++)
@@ -121,11 +122,10 @@ __global__ void nmfcpy(double *mat, double *matcp, int m, int n) //kernel copy m
 		mat[row*n+col] = matcp[row*n+col];
 }
 
-void nmfInit(double *a, int r, int c, int k, double *tmp)
+void nmfInit(double *a, int r, int c, int k, double *tmp, const int niters)
 {
 	const dim3 block(BLOCKSIZE, BLOCKSIZE);
 	const dim3 grid((c + BLOCKSIZE - 1)/ BLOCKSIZE,(r + BLOCKSIZE - 1)/ BLOCKSIZE);
-	const int niters = 100;
 	srand(time(0));
 
 	//initialize
