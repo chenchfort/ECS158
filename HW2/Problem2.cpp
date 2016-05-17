@@ -11,8 +11,12 @@ inline bool is_brights(const float *pix, const int i, const int j, const int n,c
 	return true;
 }
 
+<<<<<<< HEAD
 
 int brights(float *pix, int n, int k, float thresh)
+=======
+int brights2(float *pix, int n, int k, float thresh)
+>>>>>>> fe32198b8a6f7434f5fa11054f82fa62f0c448b3
 {
   int count = 0;
   const int s = n - k + 1;
@@ -25,6 +29,26 @@ int brights(float *pix, int n, int k, float thresh)
 
   return count;
 }
+<<<<<<< HEAD
+=======
+
+int brights(float *pix, int n, int k, float thresh)
+{
+  int count = 0;
+  #pragma omp parallel for reduction(+:count) collapse(1) schedule(guided)
+  for (int i = 0; i < n - k+1; i++)
+    for (int j = 0; j < n - k+1; j++) {
+      for (int p = i; p < i+k; p++)
+        for (int q = j; q < j+k; q++)
+          if (pix[p*n + q] < thresh)
+            goto fall;
+          count+=1;
+        fall: ;
+    }   
+
+  return count;
+}
+>>>>>>> fe32198b8a6f7434f5fa11054f82fa62f0c448b3
 
 int main(void)
 {

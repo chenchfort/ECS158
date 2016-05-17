@@ -1,0 +1,6 @@
+Problem1: DFS to traverse all possible paths
+Problem2: launch a rxc size grid and do calculation for each point
+no cudaThreadsSynchronize()
+separate kernels to accomplish barriers
+
+Problem3: use dynamic library nmfgpur to pass data from R to Cuda- GPU
