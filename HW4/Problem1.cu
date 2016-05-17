@@ -2,58 +2,60 @@
 #include <stdlib.h>
 #include <cuda.h>
 
-#define BLOCKSIZE 32
+#define DEBUG
 
-__global__ void quad(float *a, int n, float *u, float *out)
+__global__ void quad(float *a, int n, float *u, float *v)
 {
-  int tot_th = gridDim.x * blockDim.x; //Total number of threads
-  int t_id   = blockIdx.x * blockDim.x + threadIdx.x; //Thread number
+  int tot_x = gridDim.x * blockDim.x; // Total number of x threads
+  int tot_y = gridDim.y * blockDim.y; // Total number of y threads
+  int me_x  = blockIdx.x * blockDim.x + threadIdx.x; // x thread number
+  int me_y  = blockIdx.y * blockDim.y + threadIdx.y; // y threaqd number
+
   int i, j;
   float sum = 0;
 
-  #ifdef DEBUG
-  printf("Thread : %d out of %d\n", t_id, tot_th);
-  #endif
 
-  // Perform matrix quad
-  for (i = t_id; i < n; i += tot_th)
-    for (j = 0; j < n; j++)
+  // Perform matrix quad v = u'Au
+  for (i = me_x; i < n; i += tot_x)
+    for (j = me_y; j < n; j += tot_y)
       sum += u[i] * a[i * n + j] * u[j];
 
-  atomicAdd(out, sum);
+  // Add atomically to output
+  atomicAdd(v, sum);
 }
 
 float gpuquad(float *a, int n, float *u) {
-    float *da, *du, *dout;
-    float hout = 0;
+  // Function to perform v = u'Au
+    float *da, *du, *dv;
+    float v = 0;
 
     cudaMalloc((void **)&da, n * n * sizeof(float));
     cudaMalloc((void **)&du, n * sizeof(float));
-    cudaMalloc((void **)&dout, sizeof(float));
+    cudaMalloc((void **)&dv, sizeof(float));
 
     cudaMemcpy(da, a, n * n * sizeof(float), cudaMemcpyHostToDevice);
     cudaMemcpy(du, u, n * sizeof(float), cudaMemcpyHostToDevice);
-    cudaMemcpy(dout, &hout, sizeof(float), cudaMemcpyHostToDevice);
+    cudaMemcpy(dv, &v, sizeof(float), cudaMemcpyHostToDevice);
 
-    dim3 dimGrid(1, 1);
+    dim3 dimGrid(n, n);     // Fine tune parameters later
     dim3 dimBlock(n, 1, 1);
 
-    quad<<<dimGrid, dimBlock>>>(da, n, du, dout);
+    quad<<<dimGrid, dimBlock>>>(da, n, du, dv);
 
     cudaThreadSynchronize();
 
-    cudaMemcpy(&hout, dout, sizeof(float), cudaMemcpyDeviceToHost);
+    cudaMemcpy(&v, dv, sizeof(float), cudaMemcpyDeviceToHost);
 
     cudaFree(da);
     cudaFree(du);
+    cudaFree(dv);
 
-    return hout;
+    return v;
 }
 
 int main(void)
 {
   int n = 2;
-  int i, j;
   float *a = (float*) malloc(n * n * sizeof(float));
   float *u = (float*) malloc(n * sizeof(float));
 
@@ -67,6 +69,9 @@ int main(void)
 
   #ifdef DEBUG
   // Serial code for testing
+  // Possiably true in general
+  // Check input with R
+  int i, j;
   float sum = 0;
   for (i = 0; i < n; i++)
     for (j = 0; j < n; j++)
