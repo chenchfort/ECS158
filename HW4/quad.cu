@@ -3,25 +3,20 @@
 #include <cuda.h>
 
 #define DEBUG
-#define BLOCK 32
+#define BLOCK 16
 
 __global__ void quad(float *a, int n, float *u, float *v)
 {
-  int tot_x = gridDim.x * blockDim.x; // Total number of x threads
-  int tot_y = gridDim.y * blockDim.y; // Total number of y threads
-  int me_x  = blockIdx.x * blockDim.x + threadIdx.x; // x thread number
-  int me_y  = blockIdx.y * blockDim.y + threadIdx.y; // y threaqd number
+  int col  = blockIdx.x * blockDim.x + threadIdx.x; // x thread number
+  int row  = blockIdx.y * blockDim.y + threadIdx.y; // y threaqd number
 
-  int i, j;
-  float sum = 0;
-
-  // Perform matrix quad v = u'Au
-  for (i = me_x; i < n; i += tot_x)
-    for (j = me_y; j < n; j += tot_y)
-      sum += u[i] * a[i * n + j] * u[j];
-
-  // Add atomically to output
-  atomicAdd(v, sum);
+  if (row < n && col < n && col >= row) {
+	float sum = u[col]*a[row*n+col]*u[row];
+	if (col == row)
+		atomicAdd(v, sum);
+	else
+		atomicAdd(v, 2*sum);
+  }
 }
 
 float gpuquad(float *a, int n, float *u) {
@@ -37,15 +32,12 @@ float gpuquad(float *a, int n, float *u) {
     cudaMemcpy(du, u, n * sizeof(float), cudaMemcpyHostToDevice);
     cudaMemcpy(dv, &v, sizeof(float), cudaMemcpyHostToDevice);
 
-    int size = (n / BLOCK) + 1;
+    int size = (n+BLOCK-1) / BLOCK;
 
     dim3 dimGrid(size, size);     // Fine tune parameters later
-    dim3 dimBlock(BLOCK, BLOCK, 1);
+    dim3 dimBlock(BLOCK, BLOCK);
 
     quad<<<dimGrid, dimBlock>>>(da, n, du, dv);
-
-    cudaThreadSynchronize();
-
     cudaMemcpy(&v, dv, sizeof(float), cudaMemcpyDeviceToHost);
 
     cudaFree(da);
@@ -92,4 +84,3 @@ int main(void)
 
   return 0;
 }
-
