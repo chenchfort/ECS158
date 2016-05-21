@@ -1,37 +1,35 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <mpi.h>
+s
+#define MSG 0
 
 // Declare global variables for MPI
-int n_nodes, my_rank, chunk, start, end;
+int nodes, me, chunk, start, end;
+
+void findmyrange(int n, int nth, int me, int *myrange)
+{
+  int chunksize = n/nth;
+  myrange[0] = me *chunksize;
+  if (me < nth - 1)
+    myrange[1] = (me+1) * chunksize - 1;
+  else
+    myrange[1] = n - 1;
+}
+
+void init()
+{
+  MPI_Comm_size(MPI_COMM_WORLD, &nodes);
+  MPI_Comm_rank(MPI_COMM_WORLD, &me);
+  chunk = nv/nnodes;
+  start = me * chunk;
+  end = start + chunk-1;
+  //malloc
+}
 
 int *transgraph(int *adjm, int n, int *nout)
 {
-  // Set nout to 0 incase caller does not set it
-  (*nout) = 0;
-
-  int *out_matrix, *num_1s, *cumul_1s;
-  int myrows[2];
-  int tot_1s, out_row, num_1s_i;
-
-  num_1s = (int*) malloc(n * sizeof(int));
-  cumul_1s = (int*) malloc((n + 1) * sizeof(int));
-
-  // Scatter work across nodes
-  for (i = 0; i < n; i++)
-  {
-    for (j = 0; j < n; j++)
-    {
-      find_my_min();
-      MPI_Reduce();
-      MPI_Bcast();
-    }
-  }
-
-  // Gather work
-  MPI_Gather();
-
-  return out_matrix;
+  
 }
 
 int main(int argc, char **argv)
