@@ -35,7 +35,8 @@ int *transgraph(int *adjm, int n, int *nout) //every result data is on node 0
         for (int i = 1; i < nodes; i++)
             MPI_Recv(num1s + (i-1)*lenchunk, lenchunk, MPI_INT, i, NEW_MSG, MPI_COMM_WORLD, &status);
         
-    } else {
+    }
+    else {
         
         
         for (int i = myworker*lenchunk; i < (myworker+1)*lenchunk && i < n; i++) {
@@ -104,6 +105,7 @@ int *transgraph(int *adjm, int n, int *nout) //every result data is on node 0
         return NULL;
 }
 
+/*
 int main(int argc, char **argv)
 {
     MPI_Init(&argc, &argv);
@@ -132,4 +134,4 @@ int main(int argc, char **argv)
     }
     MPI_Finalize();
     return 0;
-}
+}*/
