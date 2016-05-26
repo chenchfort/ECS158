@@ -127,7 +127,3 @@ void nmfomp(float *a, int r, int c, int k, int niters, float *w, float *h)
 	delete[] temp;
 	delete[] wt;
 }
-
-
-
-
