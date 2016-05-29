@@ -7,7 +7,7 @@ using namespace std;
 void nmfomp(float *a, int r, int c, int k, in niters, float *w, float *h)
 {
   for (itr = 0; itr < niters; itr++) {
-    #pragma acc loop
+    #pragma acc kernels 
     for (i = 0; i < n; i++) {
       for (j = 0; j < k; j++) {
         tmp1 = 0;
@@ -27,7 +27,7 @@ void nmfomp(float *a, int r, int c, int k, in niters, float *w, float *h)
     }
  
     // Compute new H
-    #pragma acc loop
+    #pragma acc kernels
     for (i = 0; i < k; i++) {
       for (j = 0; j < c; j++) {
         tmp1 = 0;
